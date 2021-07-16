@@ -39,7 +39,7 @@ public class NaiveAgent implements Runnable {
 	private Point prevTarget;
 	// a standalone implementation of the Naive Agent
 	public NaiveAgent() {
-		
+
 		aRobot = new ActionRobot();
 		tp = new TrajectoryPlanner();
 		prevTarget = null;
@@ -50,7 +50,7 @@ public class NaiveAgent implements Runnable {
 
 	}
 
-	
+
 	// run the client
 	public void run() {
 

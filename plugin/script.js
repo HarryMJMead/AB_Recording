@@ -28,7 +28,7 @@
         };
 
         sock.onmessage = function(e) {
-            console.log('Message received: ' + e.data);
+            //console.log('Message received: ' + e.data);
             var j = JSON.parse(e.data);
 
             var id = j[0];   // message id
@@ -144,4 +144,22 @@
 
     // wait for the client to connect
     connect();
+
+    var x = 0;
+    var y = 0;
+
+    window.addEventListener('mousedown', e => {
+      x = e.offsetX;
+      y = e.offsetY;
+    });
+
+    window.addEventListener('mouseup', e => {
+      var move = [x, y, e.offsetX - x, e.offsetY - y];
+
+      var msg = JSON.stringify([999, {click: move} || {}]);
+      console.log(msg);
+      sock.send(msg);
+    });
+
+
 })();
