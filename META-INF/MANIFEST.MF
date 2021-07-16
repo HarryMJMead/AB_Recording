@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Ant-Version: Apache Ant 1.10.5
+Created-By: 1.8.0_281-b09 (Oracle Corporation)
+Main-Class: org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader
+Rsrc-Main-Class: ab.demo.MainEntry
+Rsrc-Class-Path: ./ Jama-1.0.2.jar json-simple-1.1.1.jar WebSocket.jar
+  commons-codec-1.7.jar
+Class-Path: .
+
