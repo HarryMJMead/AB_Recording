@@ -5,7 +5,7 @@
 
     <path id="classpath">
         <fileset dir="${lib.dir}" includes="**/*.jar"/>
-    </path>    
+    </path>
 <target name="clean">
         <delete dir="src" includes = "**/*.class"/>
     </target>
@@ -13,11 +13,11 @@
     <target name="compile">
         <mkdir dir="src"/>
 	 <javac srcdir="src" destdir="src" classpathref="classpath"/>
-    </target>  
+    </target>
 
 
   <target name="jar">
-        <jar destfile="ABSoftware_attempt.jar">
+        <jar destfile="ProxyTest.jar">
             <manifest>
                 <attribute name="Main-Class" value="org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader"/>
                 <attribute name="Rsrc-Main-Class" value="ab.demo.MainEntry"/>
