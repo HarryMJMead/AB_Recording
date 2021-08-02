@@ -154,7 +154,7 @@
     });
 
     window.addEventListener('mouseup', e => {
-      var move = [x, y, e.offsetX - x, e.offsetY - y];
+      var move = [x, y, e.offsetX, e.offsetY];
 
       var msg = JSON.stringify([999, {click: move} || {}]);
       console.log(msg);

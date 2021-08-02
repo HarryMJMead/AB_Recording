@@ -24,10 +24,10 @@ import org.json.simple.JSONValue;
 /* Proxy ------------------------------------------------------------------ */
 
 public class Proxy extends WebSocketServer {
-    private Long id = 0L;
-    private HashMap<Long, ProxyResult<?>> results = new HashMap<Long, ProxyResult<?>>();
+    public Long id = 0L;
+    public HashMap<Long, ProxyResult<?>> results = new HashMap<Long, ProxyResult<?>>();
 
-    private class ProxyResult<T> {
+    public class ProxyResult<T> {
         public ProxyMessage<T> message;
         public SynchronousQueue<Object> queue = new SynchronousQueue<Object>();
     }
@@ -53,7 +53,6 @@ public class Proxy extends WebSocketServer {
 
     @Override
     public void onMessage(WebSocket conn, String message) {
-        System.out.println("Recieved Message: " + message);
         JSONArray j = (JSONArray) JSONValue.parse(message);
         Long id = (Long) j.get(0);
         JSONObject data = (JSONObject) j.get(1);
@@ -91,13 +90,13 @@ public class Proxy extends WebSocketServer {
         for (WebSocket conn : connections()) {
             conn.send(a.toJSONString());
         }
-
+       
 
 
         id++;
 
         try {
-
+        	
             return (T)result.queue.take();
         } catch (InterruptedException e) {
 

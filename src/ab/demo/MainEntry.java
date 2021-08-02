@@ -17,6 +17,13 @@ public class MainEntry {
 	// the entry of the software.
 	public static void main(String args[])
 	{
+
+		//For Running from Eclipse
+		HumanAgent  e_na = new HumanAgent();
+		e_na.run();
+
+
+
 		String command = "";
 		if(args.length > 0)
 		{
@@ -277,9 +284,9 @@ public class MainEntry {
 			else
 				System.out.println("Please input the correct command");
 		}
-		else 
+		else
 			System.out.println("Please input the correct command");
-		
+
 
 	}
 }

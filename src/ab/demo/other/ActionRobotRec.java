@@ -36,46 +36,22 @@ import ab.vision.Vision;
  * Util class for basic functions
  * 
  */
-public class ActionRobot {
+public class ActionRobotRec {
 	public static Proxy proxy;
 	public String level_status = "UNKNOWN";
 	public int current_score = 0;
 	private LoadLevelSchema lls;
 	private RestartLevelSchema rls;
-	static {
-		if (proxy == null) {
-			try {
-				proxy = new Proxy(9000) {
-					@Override
-					public void onOpen() {
-						System.out.println("Client connected");
-					}
-
-					@Override
-					public void onClose() {
-						System.out.println("Client disconnected");
-					}
-				};
-				proxy.start();
-
-				System.out
-						.println("Server started on port: " + proxy.getPort());
-
-				System.out.println("Waiting for client to connect");
-				proxy.waitForClients(1);
-
-			} catch (UnknownHostException e) {
-
-				e.printStackTrace();
-			}
-		}
-	}
 
 	// A java util class for the standalone version. It provides common
 	// functions an agent would use. E.g. get the screenshot
-	public ActionRobot() {
+	public ActionRobotRec(Proxy prx) {
+		
+		proxy = prx;
+		
 		lls = new LoadLevelSchema(proxy);
 		rls = new RestartLevelSchema(proxy);
+		
 	}
 
 	public void restartLevel() {
@@ -191,9 +167,11 @@ public class ActionRobot {
 	}
 
 	public static void fullyZoomOut() {
+		
 		for (int k = 0; k < 15; k++) {
 
 			proxy.send(new ProxyMouseWheelMessage(-1));
+			
 		}
 		try {
 			Thread.sleep(2000);
@@ -219,7 +197,7 @@ public class ActionRobot {
 		
 		BufferedImage image = null;
 		try {
-			System.out.println("Recieved Message: " + imageBytes);
+			//System.out.println("Recieved Message: " + imageBytes);
 			ByteArrayInputStream testing = new ByteArrayInputStream(imageBytes);
 			
 			image = ImageIO.read(testing);
@@ -281,13 +259,13 @@ public class ActionRobot {
 	public static void main(String args[]) {
 
 		long time = System.currentTimeMillis();
-		ActionRobot.doScreenShot();
+		ActionRobotRec.doScreenShot();
 		time = System.currentTimeMillis() - time;
 		System.out.println(" cost: " + time);
 		time = System.currentTimeMillis();
 		int count = 0;
 		while (count < 40) {
-			ActionRobot.doScreenShot();
+			ActionRobotRec.doScreenShot();
 			count++;
 		}
 
@@ -298,6 +276,6 @@ public class ActionRobot {
 	}
 
 	public int getScore() {
-		return StateUtil.getScore(ActionRobot.proxy);
+		return StateUtil.getScore(ActionRobotRec.proxy);
 	}
 }

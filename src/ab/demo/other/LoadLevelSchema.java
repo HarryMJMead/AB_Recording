@@ -63,7 +63,7 @@ public boolean loadLevel(int i)
 private boolean loadLevel(GameState state,int i)
 {
     // if still at main menu or episode menu, skip it. 
-	ActionRobot.GoFromMainMenuToLevelSelection();
+	//ActionRobot.GoFromMainMenuToLevelSelection();
 	
 	
 	if(state == GameState.WON || state == GameState.LOST)
