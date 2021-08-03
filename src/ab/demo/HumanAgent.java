@@ -218,6 +218,7 @@ public class HumanAgent implements Runnable {
 		if(!slingshot.equals(_slingshot))
 			System.out.println("the scale is changed, the shot might not be executed properly.");
 		ar.cshoot(shot);
+		
 
 		try {
 			Thread.sleep(1000);
@@ -257,6 +258,9 @@ public class HumanAgent implements Runnable {
 				e.printStackTrace();
 			}
 		}
+		
+		fillRun();
+		collection.insert(run);
 
 		return aRobot.getState();
 	}

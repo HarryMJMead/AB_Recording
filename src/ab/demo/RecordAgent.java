@@ -41,6 +41,8 @@ import ab.vision.ABType;
 import ab.vision.GameStateExtractor.GameState;
 import ab.vision.Vision;
 
+import com.mongodb.*;
+
 public class RecordAgent implements Runnable {
 
 	public static Proxy proxy;
@@ -60,6 +62,14 @@ public class RecordAgent implements Runnable {
 	private Point relShot;
 	private int slingHeight;
 	
+	private MongoClient mongoClient;
+	private DBObject run;
+	private List<Integer> x_list;
+	private List<Integer> y_list;
+	private List<Integer> tap_list;
+	private List<Integer> pigs_list;
+	private List<Integer> birds_list;
+	private DBCollection collection;
 	
 	static {
 		
@@ -127,6 +137,14 @@ public class RecordAgent implements Runnable {
 		
 		System.out.println(proxy);
 		aRobot = new ActionRobotRec(proxy);
+		
+		try {
+			mongoClient =new MongoClient(new MongoClientURI("mongodb://localhost:27017"));
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
+		DB database = mongoClient.getDB("AngryBirds");
+		collection = database.getCollection("HumanAgent");
 		
 	}
 
@@ -213,17 +231,37 @@ public class RecordAgent implements Runnable {
 					final List<ABObject> hills = vision.findHills();
 					final List<ABObject> blocks = vision.findBlocksRealShape();
 					
-					System.out.println("Pigs: " + pigs + ", Birds: " + birds + ", Hills: " + hills + ", Blocks: " + blocks);
+					if (relShot == null) {
+						x_list.add(0);
+						y_list.add(0);
+					} else {
+						x_list.add(relShot.x);
+						y_list.add(relShot.y);
+					}
+					tap_list.add(0);
+					
+					pigs_list.add(pigs.size());
+					birds_list.add(birds.size());
+					
+					
+					
+					System.out.println("Shot: " + relShot + ", Pigs: " + pigs.size() + ", Birds: " + birds.size() + ", Hills: " + hills.size() + ", Blocks: " + blocks.size());
+					
+					
 					recordState = false;
 				}
 				
 			} else {
 				recording = false;
 				firstShot = true;
+				relShot = null;
 				
 				if (state == GameState.LOST || state == GameState.WON) {
 					System.out.println("Next Level: " + levels[currentLevel + 1]);
 					aRobot.loadLevel(levels[++currentLevel]);
+					
+					fillRun();
+					collection.insert(run);
 				} else if (state == GameState.LEVEL_SELECTION) {
 					System.out
 					.println("Unexpected level selection page, go to the last current level : "
@@ -242,6 +280,8 @@ public class RecordAgent implements Runnable {
 					ActionRobotRec.GoFromMainMenuToLevelSelection();
 					aRobot.loadLevel(levels[currentLevel]);
 				}
+				
+				setRunClear();
 			}
 
 		}
@@ -254,6 +294,24 @@ public class RecordAgent implements Runnable {
 				.sqrt((double) ((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y)
 						* (p1.y - p2.y)));
 	}
+	
+	private void setRunClear(){
+		run = new BasicDBObject("level", levels[currentLevel]);
+		x_list = new ArrayList<>();
+		y_list = new ArrayList<>();
+		tap_list = new ArrayList<>();
+		pigs_list = new ArrayList<>();
+		birds_list = new ArrayList<>();
+	}
+
+	private void fillRun(){
+		run.put("xVals", x_list);
+		run.put("yVals", y_list);
+		run.put("tapVals", tap_list);
+		run.put("pigsNum", pigs_list);
+		run.put("birdsNum", birds_list);
+	}
+
 
 	public void record(JSONObject data)
 	{

@@ -19,7 +19,7 @@ public class MainEntry {
 	{
 
 		//For Running from Eclipse
-		HumanAgent  e_na = new HumanAgent();
+		RecordAgent  e_na = new RecordAgent();
 		e_na.run();
 
 

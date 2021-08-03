@@ -6,11 +6,9 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="external/bson-4.0.2.jar"/>
 	<classpathentry kind="lib" path="external/commons-codec-1.7.jar"/>
 	<classpathentry kind="lib" path="external/Jama-1.0.2.jar"/>
 	<classpathentry kind="lib" path="external/jeromq-0.5.2.jar"/>
-	<classpathentry kind="lib" path="external/jnacl-1.0.0.jar"/>
 	<classpathentry kind="lib" path="external/json-simple-1.1.1.jar"/>
 	<classpathentry kind="lib" path="external/mongo-java-driver-2.14.3.jar"/>
 	<classpathentry kind="lib" path="external/protobuf-java-3.11.4.jar"/>
