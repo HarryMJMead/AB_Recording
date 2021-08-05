@@ -62,6 +62,12 @@ public class RecordAgent implements Runnable {
 	private Point relShot;
 	private int slingHeight;
 	
+	private int shotWait = 5000;
+	
+	private long shotTime;
+	private int lastTapTime = 0;
+	private long jShotTime = -shotWait;
+	
 	private MongoClient mongoClient;
 	private DBObject run;
 	private List<Integer> x_list;
@@ -98,6 +104,7 @@ public class RecordAgent implements Runnable {
 				        JSONArray j = (JSONArray) JSONValue.parse(message);
 				        Long id = (Long) j.get(0);
 				        JSONObject data = (JSONObject) j.get(1);
+				        
 				        
 				        if (id == -1 && recording) {
 				        	record(data);
@@ -191,6 +198,7 @@ public class RecordAgent implements Runnable {
 	
 	public void run() {
 		System.out.println("Atleast it runs");
+		setRunClear();
 		
 		
 		//aRobot.loadLevel(currentLevel);
@@ -202,6 +210,7 @@ public class RecordAgent implements Runnable {
 				BufferedImage screenshot = ActionRobotRec.doScreenShot();
 				Vision vision = new Vision(screenshot);
 				Rectangle sling = vision.findSlingshotMBR();
+				
 				
 				// Record Initial Sling Height
 				if (firstShot) {
@@ -225,11 +234,11 @@ public class RecordAgent implements Runnable {
 				}
 				
 				//Record Gamestate after shot
-				if (recordState) {
+				if (recordState && System.currentTimeMillis() - jShotTime > shotWait) {
 					List<ABObject> pigs = vision.findPigsMBR();
-					final List<ABObject> birds = vision.findBirdsRealShape();
-					final List<ABObject> hills = vision.findHills();
-					final List<ABObject> blocks = vision.findBlocksRealShape();
+					List<ABObject> birds = vision.findBirdsRealShape();
+					List<ABObject> hills = vision.findHills();
+					List<ABObject> blocks = vision.findBlocksRealShape();
 					
 					if (relShot == null) {
 						x_list.add(0);
@@ -245,8 +254,9 @@ public class RecordAgent implements Runnable {
 					
 					
 					
-					System.out.println("Shot: " + relShot + ", Pigs: " + pigs.size() + ", Birds: " + birds.size() + ", Hills: " + hills.size() + ", Blocks: " + blocks.size());
-					
+					//System.out.println("Shot: " + relShot + ", Pigs: " + pigs.size() + ", Birds: " + birds.size() + ", Hills: " + hills.size() + ", Blocks: " + blocks.size());
+					//System.out.println("Shot: (" + relShot.x +", " + relShot.y + "), TapTime: "+ lastTapTime + ", Pigs: " + pigs.size() + ", Birds: " + birds.size());
+					System.out.println("Shot: "+ relShot +", TapTime: "+ lastTapTime + ", Pigs: " + pigs.size() + ", Birds: " + birds.size());
 					
 					recordState = false;
 				}
@@ -255,6 +265,7 @@ public class RecordAgent implements Runnable {
 				recording = false;
 				firstShot = true;
 				relShot = null;
+				jShotTime = -shotWait;
 				
 				if (state == GameState.LOST || state == GameState.WON) {
 					System.out.println("Next Level: " + levels[currentLevel + 1]);
@@ -315,6 +326,10 @@ public class RecordAgent implements Runnable {
 
 	public void record(JSONObject data)
 	{
+		//Gets Time
+		Long time = (Long) data.get("time");
+		//System.out.println(time);
+		
 		//Handles Clicks
 		JSONArray clicks = (JSONArray) data.get("click");
 		
@@ -370,15 +385,19 @@ public class RecordAgent implements Runnable {
 			
 			//System.out.println(distance(refPoint, mDown));
 			
-			if (distance(refPoint, mDown) < slingHeight*0.4) {
+			if (distance(refPoint, mDown) < slingHeight*0.4 && System.currentTimeMillis() - jShotTime > shotWait) {
 				System.out.println("Shot - dx: " + dx + ", dy: " + dy);
 				relShot = new Point(dx, dy);
 				
-				try {
-					Thread.sleep(7000);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
+				shotTime = time;
+				lastTapTime = 0;
+				jShotTime = System.currentTimeMillis();
+				
+//				try {
+//					Thread.sleep(7000);
+//				} catch (InterruptedException e) {
+//					e.printStackTrace();
+//				}
 				
 				recordState = true;
 				
@@ -393,6 +412,10 @@ public class RecordAgent implements Runnable {
 					shooting = true;
 					System.out.println(shooting);
 				}
+			}
+			
+			if (lastTapTime == 0) {
+				lastTapTime = (int)(time - shotTime);
 			}
 		}
 	}
