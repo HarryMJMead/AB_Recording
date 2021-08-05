@@ -139,6 +139,7 @@
         // obtain a png of the canvas
         var imageString = canvas.toDataURL();
 
+
         return {'data': imageString, 'time': new Date().getTime()};
     }
 
@@ -156,9 +157,14 @@
     window.addEventListener('mouseup', e => {
       var move = [x, y, e.offsetX, e.offsetY];
 
-      var msg = JSON.stringify([999, {click: move} || {}]);
-      console.log(msg);
-      sock.send(msg);
+      //var msg = JSON.stringify([999, {click: move} || {}]);
+      //console.log(msg);
+      //sock.send(msg);
+      //send(20, {data: move});
+      //send(21, screenshot());
+      var imageRec = screenshot();
+
+      send(-1, {click: move, screenshot: imageRec['data'], time: imageRec['time']});
     });
 
 
