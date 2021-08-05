@@ -38,6 +38,7 @@ import ab.utils.StateUtil;
 import ab.utils.LogWriter;
 import ab.vision.ABObject;
 import ab.vision.ABType;
+import ab.vision.GameStateExtractor;
 import ab.vision.GameStateExtractor.GameState;
 import ab.vision.Vision;
 
@@ -49,7 +50,7 @@ public class RecordAgent implements Runnable {
 	private ActionRobotRec aRobot;
 	private Random randomGenerator;
 	public int currentLevel = 0;
-	public int[] levels = {1, 3, 4, 5};
+	public int[] levels = {11, 1, 3, 4, 5};
 	public static int time_limit = 12;
 	private Map<Integer,Integer> scores = new LinkedHashMap<Integer,Integer>();
 	TrajectoryPlanner tp;
@@ -62,7 +63,7 @@ public class RecordAgent implements Runnable {
 	private Point relShot;
 	private int slingHeight;
 	
-	private int shotWait = 5000;
+	private int shotWait = 4000;
 	
 	private long shotTime;
 	private int lastTapTime = 0;
@@ -76,6 +77,9 @@ public class RecordAgent implements Runnable {
 	private List<Integer> pigs_list;
 	private List<Integer> birds_list;
 	private DBCollection collection;
+	
+	private Vision lastVision;
+	private Vision savedVision;
 	
 	static {
 		
@@ -107,7 +111,11 @@ public class RecordAgent implements Runnable {
 				        
 				        
 				        if (id == -1 && recording) {
+				        	//System.out.println("up");
 				        	record(data);
+				        } else if (id == -2 && recording) {
+				        	//System.out.println("down");
+				        	savedVision = lastVision;
 				        } else {
 				        
 					        ProxyResult<?> result = results.get(id);
@@ -203,13 +211,14 @@ public class RecordAgent implements Runnable {
 		
 		//aRobot.loadLevel(currentLevel);
 		while (true) {
-			GameState state = aRobot.getState();			
+			BufferedImage screenshot = ActionRobotRec.doScreenShot();	
+			GameStateExtractor gameStateExtractor = new GameStateExtractor();
+	        GameState state = gameStateExtractor.getGameState(screenshot);
 			
 			if (state == GameState.PLAYING) {
 				recording = true;
-				BufferedImage screenshot = ActionRobotRec.doScreenShot();
-				Vision vision = new Vision(screenshot);
-				Rectangle sling = vision.findSlingshotMBR();
+				lastVision = new Vision(screenshot);
+				Rectangle sling = lastVision.findSlingshotMBR();
 				
 				
 				// Record Initial Sling Height
@@ -235,44 +244,22 @@ public class RecordAgent implements Runnable {
 				
 				//Record Gamestate after shot
 				if (recordState && System.currentTimeMillis() - jShotTime > shotWait) {
-					List<ABObject> pigs = vision.findPigsMBR();
-					List<ABObject> birds = vision.findBirdsRealShape();
-					List<ABObject> hills = vision.findHills();
-					List<ABObject> blocks = vision.findBlocksRealShape();
 					
-					if (relShot == null) {
-						x_list.add(0);
-						y_list.add(0);
-					} else {
-						x_list.add(relShot.x);
-						y_list.add(relShot.y);
-					}
-					tap_list.add(0);
-					
-					pigs_list.add(pigs.size());
-					birds_list.add(birds.size());
-					
-					
-					
-					//System.out.println("Shot: " + relShot + ", Pigs: " + pigs.size() + ", Birds: " + birds.size() + ", Hills: " + hills.size() + ", Blocks: " + blocks.size());
-					//System.out.println("Shot: (" + relShot.x +", " + relShot.y + "), TapTime: "+ lastTapTime + ", Pigs: " + pigs.size() + ", Birds: " + birds.size());
-					System.out.println("Shot: "+ relShot +", TapTime: "+ lastTapTime + ", Pigs: " + pigs.size() + ", Birds: " + birds.size());
+					//RecordState(lastVision);
 					
 					recordState = false;
 				}
 				
 			} else {
 				recording = false;
-				firstShot = true;
-				relShot = null;
-				jShotTime = -shotWait;
 				
 				if (state == GameState.LOST || state == GameState.WON) {
-					System.out.println("Next Level: " + levels[currentLevel + 1]);
-					aRobot.loadLevel(levels[++currentLevel]);
-					
+					RecordState(lastVision);
 					fillRun();
 					collection.insert(run);
+					
+					System.out.println("Next Level: " + levels[currentLevel + 1]);
+					aRobot.loadLevel(levels[++currentLevel]);
 				} else if (state == GameState.LEVEL_SELECTION) {
 					System.out
 					.println("Unexpected level selection page, go to the last current level : "
@@ -292,6 +279,9 @@ public class RecordAgent implements Runnable {
 					aRobot.loadLevel(levels[currentLevel]);
 				}
 				
+				firstShot = true;
+				relShot = null;
+				jShotTime = -shotWait;
 				setRunClear();
 			}
 
@@ -299,6 +289,32 @@ public class RecordAgent implements Runnable {
 
 	}
 	
+	private void RecordState(Vision vision) {
+		List<ABObject> pigs = vision.findPigsMBR();
+		List<ABObject> birds = vision.findBirdsRealShape();
+		List<ABObject> hills = vision.findHills();
+		List<ABObject> blocks = vision.findBlocksRealShape();
+		
+		if (relShot == null) {
+			x_list.add(null);
+			y_list.add(null);
+			tap_list.add(null);
+		} else {
+			x_list.add(relShot.x);
+			y_list.add(relShot.y);
+			tap_list.add(lastTapTime);
+		}
+		
+		pigs_list.add(pigs.size());
+		birds_list.add(birds.size());
+		
+		
+		
+		//System.out.println("Shot: " + relShot + ", Pigs: " + pigs.size() + ", Birds: " + birds.size() + ", Hills: " + hills.size() + ", Blocks: " + blocks.size());
+		//System.out.println("Shot: (" + relShot.x +", " + relShot.y + "), TapTime: "+ lastTapTime + ", Pigs: " + pigs.size() + ", Birds: " + birds.size());
+		System.out.println("Shot: "+ relShot +", TapTime: "+ lastTapTime + ", Pigs: " + pigs.size() + ", Birds: " + birds.size());
+		
+	}
 
 	private double distance(Point p1, Point p2) {
 		return Math
@@ -387,6 +403,9 @@ public class RecordAgent implements Runnable {
 			
 			if (distance(refPoint, mDown) < slingHeight*0.4 && System.currentTimeMillis() - jShotTime > shotWait) {
 				System.out.println("Shot - dx: " + dx + ", dy: " + dy);
+				
+				RecordState(savedVision);
+				
 				relShot = new Point(dx, dy);
 				
 				shotTime = time;
