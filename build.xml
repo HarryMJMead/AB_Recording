@@ -17,7 +17,7 @@
 
 
   <target name="jar">
-        <jar destfile="ProxyTest.jar">
+        <jar destfile="AB_Record.jar">
             <manifest>
                 <attribute name="Main-Class" value="org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader"/>
                 <attribute name="Rsrc-Main-Class" value="ab.demo.MainEntry"/>
