@@ -152,6 +152,8 @@
     window.addEventListener('mousedown', e => {
       x = e.offsetX;
       y = e.offsetY;
+
+      send(-2, {x: x, y: y});
     });
 
     window.addEventListener('mouseup', e => {
