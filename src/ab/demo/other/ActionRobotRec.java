@@ -63,7 +63,7 @@ public class ActionRobotRec {
 		GameState state = StateUtil.getGameState(proxy);
 		while (state == GameState.MAIN_MENU) {
 
-			System.out.println("Go to the Episode Menu");
+			//System.out.println("Go to the Episode Menu");
 			proxy.send(new ProxyClickMessage(305, 277));
 			try {
 				Thread.sleep(1000);
@@ -75,7 +75,7 @@ public class ActionRobotRec {
 		}
 		// --- go from the episode menu to the level selection menu
 		while (state == GameState.EPISODE_MENU) {
-			System.out.println("Select the Poached Eggs Episode");
+			//System.out.println("Select the Poached Eggs Episode");
 			proxy.send(new ProxyClickMessage(150, 300));
 			state = StateUtil.getGameState(proxy);
 			try {

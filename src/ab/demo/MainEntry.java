@@ -19,8 +19,8 @@ public class MainEntry {
 	{
 
 		//For Running from Eclipse
-		RecordAgent  e_na = new RecordAgent();
-		e_na.run();
+		//RecordAgent  e_na = new RecordAgent();
+		//e_na.run();
 
 
 
@@ -38,6 +38,11 @@ public class MainEntry {
 				NaiveAgent_new nan = new NaiveAgent_new();
 				nan.run();
 			}
+			else
+				if (args.length == 1 && command.equalsIgnoreCase("-rec")){
+					RecordAgent  rec = new RecordAgent();
+					rec.run();
+				}
 			else
 			if (args.length == 1 && command.equalsIgnoreCase("-mo")){
 				NaiveAgent_combined na_c = new NaiveAgent_combined();

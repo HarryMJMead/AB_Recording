@@ -44,13 +44,13 @@ import ab.vision.Vision;
 
 import com.mongodb.*;
 
-public class RecordAgent implements Runnable {
+public class RecordAgentOld implements Runnable {
 
 	public static Proxy proxy;
 	private ActionRobotRec aRobot;
 	private Random randomGenerator;
 	public int currentLevel = 0;
-	public int[] levels = {1, 4, 5, 11, 17, 19};
+	public int[] levels = {11, 1, 3, 4, 5};
 	public static int time_limit = 12;
 	private Map<Integer,Integer> scores = new LinkedHashMap<Integer,Integer>();
 	TrajectoryPlanner tp;
@@ -81,15 +81,15 @@ public class RecordAgent implements Runnable {
 	private Vision lastVision;
 	private Vision savedVision;
 	
-	private long playerID = System.currentTimeMillis();
-	
 	static {
 		
 	}
 	
 	// a standalone implementation of the Naive Agent
-	public RecordAgent() {
-		//Set up proxy message handling
+	public RecordAgentOld() {
+		tp = new TrajectoryPlanner();
+
+		
 		if (proxy == null) {
 			try {
 				proxy = new Proxy(9000) {
@@ -111,10 +111,10 @@ public class RecordAgent implements Runnable {
 				        
 				        
 				        if (id == -1 && recording) {
-				        	//Record shot on click up
+				        	//System.out.println("up");
 				        	record(data);
 				        } else if (id == -2 && recording) {
-				        	//Save previous game state on click down
+				        	//System.out.println("down");
 				        	savedVision = lastVision;
 				        } else {
 				        
@@ -130,11 +130,16 @@ public class RecordAgent implements Runnable {
 				                }
 				            }
 				        }
+			            
+				        //System.out.println("ID: " + id);
+				        //System.out.println("Data: " + imageBytes);
+
 				    }
 				};
 				proxy.start();
 
-				System.out.println("Server started on port: " + proxy.getPort());
+				System.out
+						.println("Server started on port: " + proxy.getPort());
 
 				System.out.println("Waiting for client to connect");
 				proxy.waitForClients(1);
@@ -145,11 +150,9 @@ public class RecordAgent implements Runnable {
 			}
 		}
 		
-		//Set up ActionRobot/Trajectory Planner
+		System.out.println(proxy);
 		aRobot = new ActionRobotRec(proxy);
-		tp = new TrajectoryPlanner();
 		
-		//Connect to MongoDB
 		try {
 			mongoClient =new MongoClient(new MongoClientURI("mongodb://localhost:27017"));
 		} catch (UnknownHostException e) {
@@ -160,10 +163,49 @@ public class RecordAgent implements Runnable {
 		
 	}
 
+
+	// run the client
+	public void run1() {
+		System.out.println("Atleast it runs");
+		
+		ActionRobotRec.fullyZoomOut();
+		BufferedImage screenshot = ActionRobotRec.doScreenShot();
+		Vision vision = new Vision(screenshot);
+		Rectangle sling = vision.findSlingshotMBR();
+		
+		slingHeight = sling.height;
+		
+		System.out.println(slingHeight);
+		
+		while (true) {
+			screenshot = ActionRobotRec.doScreenShot();
+			vision = new Vision(screenshot);
+			sling = vision.findSlingshotMBR();
+			
+			if (sling != null) {
+				double scaleFactor = (double)sling.height/(double)slingHeight;
+				
+				if (scaleFactor > 1) {
+					System.out.println("ScaleFactor: " + scaleFactor);
+					ActionRobotRec.fullyZoomOut();
+				}
+			}
+			//takeShot(new Point(-5, 5));
+	        
+	        
+			if (shooting) {
+				System.out.println(relShot);
+				takeShot(relShot);
+				
+				shooting = false;
+			}
+			
+		}
+
+	}
 	
 	public void run() {
-		System.out.println("PlayerID: " + playerID);
-		System.out.println("Loading Level");
+		System.out.println("Atleast it runs");
 		setRunClear();
 		
 		
@@ -181,22 +223,14 @@ public class RecordAgent implements Runnable {
 				
 				// Record Initial Sling Height
 				if (firstShot) {
-					System.out.println("Recording Inital State. Please wait before taking first shot.");
-					recording = false;
-					
 					ActionRobotRec.fullyZoomOut();
-					screenshot = ActionRobotRec.doScreenShot();	
-					lastVision = new Vision(screenshot);
 					
-					sling = lastVision.findSlingshotMBR();
 					slingHeight = sling.height;
-					//System.out.println("Recorded Sling Height: " + slingHeight);
-					System.out.println("Start when ready");
+					System.out.println("Recorded Sling Height: " + slingHeight);
 					
 					firstShot = false;
-					recording = true;
+					recordState = true;
 				}
-				
 				
 				// Check to see if Zoomed in
 				if (sling != null) {
@@ -208,6 +242,13 @@ public class RecordAgent implements Runnable {
 					}
 				}
 				
+				//Record Gamestate after shot
+				if (recordState && System.currentTimeMillis() - jShotTime > shotWait) {
+					
+					//RecordState(lastVision);
+					
+					recordState = false;
+				}
 				
 			} else {
 				recording = false;
@@ -217,26 +258,22 @@ public class RecordAgent implements Runnable {
 					fillRun();
 					collection.insert(run);
 					
-					if (currentLevel + 1 >= levels.length) {
-						break;
-					}
-					
-					System.out.println("Loading Next Level: " + levels[currentLevel + 1]);
+					System.out.println("Next Level: " + levels[currentLevel + 1]);
 					aRobot.loadLevel(levels[++currentLevel]);
 				} else if (state == GameState.LEVEL_SELECTION) {
 					System.out
-					.println("Unexpected level selection page, loading current level : "
+					.println("Unexpected level selection page, go to the last current level : "
 							+ levels[currentLevel]);
 					aRobot.loadLevel(levels[currentLevel]);
 				} else if (state == GameState.MAIN_MENU) {
 					System.out
-					.println("Unexpected main menu page, loading last current level : "
+					.println("Unexpected main menu page, go to the last current level : "
 							+ levels[currentLevel]);
 					ActionRobotRec.GoFromMainMenuToLevelSelection();
 					aRobot.loadLevel(levels[currentLevel]);
 				} else if (state == GameState.EPISODE_MENU) {
 					System.out
-					.println("Unexpected episode menu page, loading last current level : "
+					.println("Unexpected episode menu page, go to the last current level : "
 							+ levels[currentLevel]);
 					ActionRobotRec.GoFromMainMenuToLevelSelection();
 					aRobot.loadLevel(levels[currentLevel]);
@@ -249,14 +286,10 @@ public class RecordAgent implements Runnable {
 			}
 
 		}
-		
-		System.out.println("Completed all levels. Thank You!");
 
 	}
 	
 	private void RecordState(Vision vision) {
-		//Record the current game state
-		
 		List<ABObject> pigs = vision.findPigsMBR();
 		List<ABObject> birds = vision.findBirdsRealShape();
 		List<ABObject> hills = vision.findHills();
@@ -275,7 +308,11 @@ public class RecordAgent implements Runnable {
 		pigs_list.add(pigs.size());
 		birds_list.add(birds.size());
 		
-		//System.out.println("Shot: "+ relShot +", TapTime: "+ lastTapTime + ", Pigs: " + pigs.size() + ", Birds: " + birds.size());
+		
+		
+		//System.out.println("Shot: " + relShot + ", Pigs: " + pigs.size() + ", Birds: " + birds.size() + ", Hills: " + hills.size() + ", Blocks: " + blocks.size());
+		//System.out.println("Shot: (" + relShot.x +", " + relShot.y + "), TapTime: "+ lastTapTime + ", Pigs: " + pigs.size() + ", Birds: " + birds.size());
+		System.out.println("Shot: "+ relShot +", TapTime: "+ lastTapTime + ", Pigs: " + pigs.size() + ", Birds: " + birds.size());
 		
 	}
 
@@ -295,7 +332,6 @@ public class RecordAgent implements Runnable {
 	}
 
 	private void fillRun(){
-		run.put("playerID", playerID);
 		run.put("xVals", x_list);
 		run.put("yVals", y_list);
 		run.put("tapVals", tap_list);
@@ -312,11 +348,11 @@ public class RecordAgent implements Runnable {
 		
 		//Handles Clicks
 		JSONArray clicks = (JSONArray) data.get("click");
-		//System.out.println("Clicks: " + clicks);
 		
 		Point mDown = new Point((int) (long) clicks.get(0), (int) (long) clicks.get(1));
 		Point mUp = new Point((int) (long) clicks.get(2), (int) (long) clicks.get(3));
 		
+		//System.out.println("Clicks: " + clicks);
 		
 		//Handles Screenshot
         String imageStr = (String) data.get("screenshot");
@@ -332,15 +368,29 @@ public class RecordAgent implements Runnable {
 		} catch (IOException e) {
 
 		}
-			
-		//process image
+		
+		
+		// process image
 		Vision vision = new Vision(screenshot);
 
-		//find the slingshot
+		// find the slingshot
 		Rectangle sling = vision.findSlingshotMBR();
 
+		// confirm the slingshot
 		
-		//Record shot if sling can be found
+//		if (sling == null && StateUtil.getGameState(proxy) == GameState.PLAYING) {
+//			System.out.println("No slingshot detected. Please remove pop up or zoom out");
+//
+//		}
+		// get all the pigs
+
+		//GameState state = StateUtil.getGameState(proxy);
+
+		//creates the logwriter that will be used to store the information about turns
+		//final LogWriter log = new LogWriter("output_bad_only.csv");
+
+
+		// if there is a sling, then play, otherwise just skip.
 		if (sling != null) {
 			//System.out.println("Sling at - x: " + sling.x + ", y: " + sling.y);
 			
@@ -352,36 +402,72 @@ public class RecordAgent implements Runnable {
 			//System.out.println(distance(refPoint, mDown));
 			
 			if (distance(refPoint, mDown) < slingHeight*0.4 && System.currentTimeMillis() - jShotTime > shotWait) {
-				//System.out.println("Shot - dx: " + dx + ", dy: " + dy);
+				System.out.println("Shot - dx: " + dx + ", dy: " + dy);
 				
-				//Record the game state before the shot was taken
 				RecordState(savedVision);
-				System.out.println("Recorded Shot");
 				
-				//Record the shot that was taken, relative to the sling
 				relShot = new Point(dx, dy);
 				
-				//Record the current time to calculate tap time
-				shotTime = time; //time from chrome
+				shotTime = time;
 				lastTapTime = 0;
-				jShotTime = System.currentTimeMillis(); //time from java
+				jShotTime = System.currentTimeMillis();
+				
+//				try {
+//					Thread.sleep(7000);
+//				} catch (InterruptedException e) {
+//					e.printStackTrace();
+//				}
+				
+				recordState = true;
+				
+				if (copyShot) {
+					try {
+						Thread.sleep(5000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					
+					System.out.println("waited");
+					shooting = true;
+					System.out.println(shooting);
+				}
 			}
 			
-			//Record the time of the next click after a shot
 			if (lastTapTime == 0) {
 				lastTapTime = (int)(time - shotTime);
 			}
 		}
+	}
+	
+	public void takeShot(Point relReleasePoint) {
+		recording = false; 
+		ActionRobotRec.fullyZoomOut();
+		BufferedImage screenshot = ActionRobotRec.doScreenShot();
+		Vision vision = new Vision(screenshot);
+		Rectangle sling = vision.findSlingshotMBR();
 		
-		//Check if restart was clicked
-		Point restart = new Point(100, 30);
-		if (distance(restart, mDown) < 30) {
-			firstShot = true;
-			relShot = null;
-			jShotTime = -shotWait;
-			setRunClear();
+		
+		if(sling != null)
+		{
+			Point refPoint = tp.getReferencePoint(sling);
 			
-			System.out.println("Restarted Level");
+			Shot shot = new Shot(refPoint.x, refPoint.y, relReleasePoint.x, relReleasePoint.y, 0, 0);
+			aRobot.cshoot(shot);
+			
+			
+		} else {
+			System.out.println("no sling detected, can not execute the shot, will re-segement the image");
 		}
+		
+		recording = true;
+	}
+
+	public static void main(String args[]) {
+
+		NaiveAgent na = new NaiveAgent();
+		if (args.length > 0)
+			na.currentLevel = Integer.parseInt(args[0]);
+		na.run();
+
 	}
 }
